@@ -1,7 +1,7 @@
 import 'package:ecommerce_app/features/product/domain/entities/product.dart';
 
 class ProductModel extends Product{
-    ProductModel({
+    const ProductModel({
         
     required super.id, 
     required super.name, 

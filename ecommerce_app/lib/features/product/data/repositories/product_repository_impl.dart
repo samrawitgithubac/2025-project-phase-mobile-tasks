@@ -67,56 +67,43 @@ class ProductRepositoryImpl extends ProductRepository{
     }
   }
   @override
-  Future<Either<Failure, List<Product>>> getAllProducts() async{
-   
-    // return const Right([]);
-    if (await networkInfo.isConnected){
-      try{
-        final result=await remoteDatasource.getAllProducts();
-        localDataSource.cacheProducts(
-          result.map((product) => ProductModel.fromEntity(product)).toList()
-        );
-        return Right(result);
-
-      }catch(e){
-        return Left(ServerFailure());
-      }
-      
-
-    }else{
-      try{
-        final cacheResult=await localDataSource.getAllProducts();
-        // return Right(cacheResult);
-        return Right(cacheResult.map((model) => model.toEntity()).toList());
-
-      }catch(e){
-        return Left(CacheFailure());
-      }
-
+Future<Either<Failure, List<Product>>> getAllProducts() async {
+  if (await networkInfo.isConnected) {
+    try {
+      final result = await remoteDatasource.getAllProducts(); 
+      await localDataSource.cacheProducts(result); 
+      return Right(result.map((model) => model.toEntity()).toList());
+    } catch (e) {
+      return Left(ServerFailure());
+    }
+  } else {
+    try {
+      final cacheResult = await localDataSource.getAllProducts(); 
+      return Right(cacheResult.map((model) => model.toEntity()).toList());
+    } catch (e) {
+      return Left(CacheFailure());
     }
   }
+}
+
+
   @override
-  Future<Either<Failure, Product>> getProductById(int id) async{
-  
-    // return Right(Product(id: id, name: 'name', description: 'description', imageURL: 'imageURL', price: 10));
-    if(await networkInfo.isConnected){
-      try{
-        final result=await remoteDatasource.getProductById(id);
-        return Right(result);
-
-      }catch(e){
-        return Left(ServerFailure());
-
-      }
-    }else{
-      try{
-        final result=await localDataSource.getProductById(id);
-        return Right(result);
-
-      }catch(e){
-        return Left(CacheFailure());
-
-      }
+Future<Either<Failure, Product>> getProductById(int id) async {
+  if (await networkInfo.isConnected) {
+    try {
+      final result = await remoteDatasource.getProductById(id);
+      return Right(result.toEntity()); 
+    } catch (e) {
+      return Left(ServerFailure());
+    }
+  } else {
+    try {
+      final result = await localDataSource.getProductById(id);
+      return Right(result.toEntity()); // ✅ FIXED
+    } catch (e) {
+      return Left(CacheFailure());
     }
   }
+}
+
 }
