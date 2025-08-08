@@ -1,7 +1,33 @@
 import 'package:flutter/material.dart';
 
-class AppProduct extends StatelessWidget {
-  const AppProduct({super.key});
+class AppProduct extends StatefulWidget {
+  final Map<String, String>? product;
+
+  const AppProduct({super.key, this.product});
+
+  @override
+  State<AppProduct> createState() => _AppProductState();
+}
+
+class _AppProductState extends State<AppProduct> {
+  late TextEditingController nameController;
+  late TextEditingController descriptionController;
+
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController(text: widget.product?['name'] ?? '');
+    descriptionController = TextEditingController(
+      text: widget.product?['description'] ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    descriptionController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +45,7 @@ class AppProduct extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.only(left: 20, right: 20),
+          padding: const EdgeInsets.only(left: 20, right: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -39,7 +65,7 @@ class AppProduct extends StatelessWidget {
                         color: Color.fromARGB(255, 163, 163, 163),
                         size: 60,
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       Text("Upload image", style: TextStyle(fontSize: 16)),
                     ],
                   ),
@@ -48,11 +74,12 @@ class AppProduct extends StatelessWidget {
               const SizedBox(height: 30),
               const Text('name', style: TextStyle(fontWeight: FontWeight.bold)),
               TextField(
+                controller: nameController,
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.grey[200],
                   border: const OutlineInputBorder(borderSide: BorderSide.none),
-                  contentPadding: EdgeInsets.symmetric(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 16,
                   ),
@@ -68,7 +95,7 @@ class AppProduct extends StatelessWidget {
                   filled: true,
                   fillColor: Colors.grey[200],
                   border: const OutlineInputBorder(borderSide: BorderSide.none),
-                  contentPadding: EdgeInsets.symmetric(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 16,
                   ),
@@ -84,7 +111,7 @@ class AppProduct extends StatelessWidget {
                   filled: true,
                   fillColor: Colors.grey[200],
                   border: const OutlineInputBorder(borderSide: BorderSide.none),
-                  contentPadding: EdgeInsets.symmetric(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 16,
                   ),
@@ -96,6 +123,7 @@ class AppProduct extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               TextField(
+                controller: descriptionController,
                 maxLines: 6,
                 decoration: InputDecoration(
                   filled: true,
@@ -111,7 +139,12 @@ class AppProduct extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pop(context, {
+                      'name': nameController.text,
+                      'description': descriptionController.text,
+                    });
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6200EE),
                     padding: const EdgeInsets.symmetric(vertical: 16),

@@ -1,12 +1,83 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
-class ProductDetailsPage extends StatelessWidget {
-  const ProductDetailsPage({super.key});
+class ProductDetailsPage extends StatefulWidget {
+  final Map<String, dynamic> product;
+  final int productIndex;
+
+  const ProductDetailsPage({
+    super.key,
+    required this.product,
+    required this.productIndex,
+  });
+
+  @override
+  State<ProductDetailsPage> createState() => _ProductDetailsPageState();
+}
+
+class _ProductDetailsPageState extends State<ProductDetailsPage> {
+  late TextEditingController _titleController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _priceController;
+  late TextEditingController _categoryController;
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
+
+  int selectedSize = 41; // Keep your hardcoded value or make editable if needed
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.product['title']);
+    _descriptionController = TextEditingController(
+      text: widget.product['description'],
+    );
+    _priceController = TextEditingController(text: widget.product['price']);
+    _categoryController = TextEditingController(
+      text: widget.product['category'],
+    );
+    _imageFile = widget.product['image'];
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _priceController.dispose();
+    _categoryController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+    );
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
+
+  void _updateProduct() {
+    final updatedProduct = {
+      'title': _titleController.text,
+      'description': _descriptionController.text,
+      'price': _priceController.text,
+      'category': _categoryController.text,
+      'image': _imageFile,
+      'size': selectedSize,
+    };
+
+    Navigator.pop(context, {
+      'index': widget.productIndex,
+      'product': updatedProduct,
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    const int hardcodedSelectedSize = 41;
-
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: SingleChildScrollView(
@@ -18,16 +89,18 @@ class ProductDetailsPage extends StatelessWidget {
                 Container(
                   height: 300,
                   width: double.infinity,
-                  decoration: BoxDecoration(
-                    image: const DecorationImage(
-                      image: AssetImage('images/shoes.jpeg'),
-                      fit: BoxFit.cover,
-                    ),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
                   margin: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    image: DecorationImage(
+                      image: _imageFile != null
+                          ? FileImage(_imageFile!) as ImageProvider
+                          : const AssetImage('images/shoes.jpeg'),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 Positioned(
@@ -41,7 +114,7 @@ class ProductDetailsPage extends StatelessWidget {
                     child: IconButton(
                       icon: const Icon(
                         Icons.arrow_back_ios,
-                        color: const Color(0xFF6200EE),
+                        color: Color(0xFF6200EE),
                       ),
                       onPressed: () {
                         Navigator.pop(context);
@@ -49,60 +122,96 @@ class ProductDetailsPage extends StatelessWidget {
                     ),
                   ),
                 ),
+                Positioned(
+                  top: 25,
+                  right: 30,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.image, color: Color(0xFF6200EE)),
+                      onPressed: _pickImage,
+                      tooltip: 'Change Image',
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 20),
-
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Category input (replacing static text)
+                  TextField(
+                    controller: _categoryController,
+                    decoration: InputDecoration(
+                      labelText: "Category",
+                      labelStyle: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 10,
+                      ),
+                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 8),
+                  // Price input + title input row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "Men's shoe",
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                      ),
-                      Row(
-                        children: [
-                          Icon(Icons.star, color: Colors.amber[600], size: 18),
-                          const SizedBox(width: 4),
-                          Text(
-                            '(4.0)',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
+                      // Title input
+                      Expanded(
+                        child: TextField(
+                          controller: _titleController,
+                          decoration: const InputDecoration(
+                            labelText: "Product Title",
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 5,
                             ),
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Derby Leather',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      Text(
-                        '\$120',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                      const SizedBox(width: 10),
+                      // Price input
+                      Container(
+                        width: 100,
+                        child: TextField(
+                          controller: _priceController,
+                          decoration: const InputDecoration(
+                            labelText: "Price",
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 5,
+                            ),
+                          ),
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          keyboardType: TextInputType.number,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 30),
+
                   const Text(
                     'Size:',
                     style: TextStyle(
@@ -112,36 +221,43 @@ class ProductDetailsPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
+
                   Wrap(
-                    spacing: 10.0,
-                    runSpacing: 10.0,
-                    children: [39, 40, 41, 42, 43, 44]
-                        .map(
-                          (size) => Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: hardcodedSelectedSize == size
-                                  ? const Color(0xFF4242FF)
-                                  : Colors.grey[200],
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              size.toString(),
-                              style: TextStyle(
-                                color: hardcodedSelectedSize == size
-                                    ? Colors.white
-                                    : Colors.black,
-                                fontWeight: FontWeight.bold,
-                              ),
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [39, 40, 41, 42, 43, 44].map((size) {
+                      final isSelected = selectedSize == size;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedSize = size;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color(0xFF4242FF)
+                                : Colors.grey[200],
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            size.toString(),
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : Colors.black,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        )
-                        .toList(),
+                        ),
+                      );
+                    }).toList(),
                   ),
+
                   const SizedBox(height: 30),
+
                   const Text(
                     'Description',
                     style: TextStyle(
@@ -151,25 +267,37 @@ class ProductDetailsPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Text(
-                    'Derby leather shoes are a timeless classic, known for their open lacing system '
-                    'which makes them a versatile choice for both casual and formal wear. '
-                    'Crafted from high-quality leather, these shoes offer exceptional comfort '
-                    'and durability. Their elegant design and sturdy construction ensure '
-                    'they will be a staple in your wardrobe for years to come. Perfect for '
-                    'daily wear or special occasions.',
+                  TextField(
+                    controller: _descriptionController,
+                    maxLines: 6,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 12,
+                      ),
+                    ),
                     style: TextStyle(
                       fontSize: 15,
                       color: Colors.grey[700],
                       height: 1.5,
                     ),
                   ),
+
                   const SizedBox(height: 40),
+
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            // For example, delete functionality could be added here if desired
+                            Navigator.pop(
+                              context,
+                            ); // Just pop without changes for now
+                          },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Colors.red),
                             shape: RoundedRectangleBorder(
@@ -190,7 +318,7 @@ class ProductDetailsPage extends StatelessWidget {
                       const SizedBox(width: 15),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: _updateProduct,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4242FF),
                             shape: RoundedRectangleBorder(
@@ -211,6 +339,7 @@ class ProductDetailsPage extends StatelessWidget {
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 20),
                 ],
               ),
